@@ -1,2 +1,2 @@
 # finpro-kemjar-47
-Final Project of Computer Network Security Lab
+Group 47's Final Project For Network Security Lab
