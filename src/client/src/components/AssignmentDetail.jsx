@@ -3,8 +3,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import api from "../utils/api"
 import Layout from "./Layout.jsx"
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://learnifybe.zeabur.app/api"
-const BACKEND_URL = API_BASE_URL.replace(/\/api$/, "")
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://learnifybe.zeabur.app"
 
 function AssignmentDetail({ user, onLogout }) {
   const { id } = useParams()
