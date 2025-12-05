@@ -76,7 +76,7 @@ function AssignmentDetail({ user, onLogout }) {
       formData.append('file', file)
 
       const token = localStorage.getItem('token')
-      const response = await fetch(`http://localhost:5000/api/assignments/${id}/submit`, {
+      const response = await fetch(`${API_BASE_URL}/api/assignments/${id}/submit`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -254,7 +254,7 @@ function AssignmentDetail({ user, onLogout }) {
                       const relativePath = submission.file_path
                         .replace(/\\/g, "/")
                         .replace(/.*uploads\//, "uploads/")
-                      const url = `http://localhost:5000/${relativePath}`
+                      const url = `${API_BASE_URL}/${relativePath}`
                       window.open(url, "_blank", "noopener,noreferrer")
                     }}
                     className="text-blue-600 dark:text-blue-400 hover:underline"
