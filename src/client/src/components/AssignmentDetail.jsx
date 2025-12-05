@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import api from "../utils/api"
 import Layout from "./Layout.jsx"
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://learnifybe.zeabur.app/api"
 const BACKEND_URL = API_BASE_URL.replace(/\/api$/, "")
 
 function AssignmentDetail({ user, onLogout }) {
@@ -76,7 +76,7 @@ function AssignmentDetail({ user, onLogout }) {
       formData.append('file', file)
 
       const token = localStorage.getItem('token')
-      const response = await fetch(`${API_BASE_URL}/assignments/${id}/submit`, {
+      const response = await fetch(`http://localhost:5000/api/assignments/${id}/submit`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -254,7 +254,7 @@ function AssignmentDetail({ user, onLogout }) {
                       const relativePath = submission.file_path
                         .replace(/\\/g, "/")
                         .replace(/.*uploads\//, "uploads/")
-                      const url = `${BACKEND_URL}/${relativePath}`
+                      const url = `http://localhost:5000/${relativePath}`
                       window.open(url, "_blank", "noopener,noreferrer")
                     }}
                     className="text-blue-600 dark:text-blue-400 hover:underline"

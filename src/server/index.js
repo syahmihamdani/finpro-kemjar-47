@@ -7,14 +7,10 @@ const bcrypt = require("bcryptjs");
 require("dotenv").config();
 
 const { Pool } = require("pg");
-
-// Prefer a single connection string (e.g., Neon/Zeabur DATABASE_URL) when provided.
-// Falls back to individual PG_* variables for local development.
 const connectionString = process.env.DATABASE_URL || process.env.PG_CONNECTION_STRING;
 const pool = connectionString
   ? new Pool({
       connectionString,
-      // Neon/managed Postgres often requires SSL; allow override via PG_SSL=false for local dev.
       ssl: process.env.PG_SSL === "false" ? false : { rejectUnauthorized: false },
     })
   : new Pool({
