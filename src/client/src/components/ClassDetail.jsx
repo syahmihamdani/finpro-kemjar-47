@@ -14,6 +14,7 @@ function ClassDetail({ user, onLogout }) {
     title: "",
     description: "",
     due_date: "",
+    max_submissions: "",
   })
   const [assignmentMessage, setAssignmentMessage] = useState("")
   const navigate = useNavigate()
@@ -60,7 +61,7 @@ function ClassDetail({ user, onLogout }) {
     try {
       const response = await api.post(`/classes/${id}/assignments`, newAssignment)
       setAssignmentMessage(`Assignment "${response.data.title}" created.`)
-      setNewAssignment({ title: "", description: "", due_date: "" })
+      setNewAssignment({ title: "", description: "", due_date: "", max_submissions: "" })
       fetchAssignments()
     } catch (err) {
       setAssignmentMessage(err.response?.data?.error || "Failed to create assignment")
@@ -166,6 +167,25 @@ function ClassDetail({ user, onLogout }) {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white"
               />
             </div>
+            <div>
+              <label
+                htmlFor="max_submissions"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Submission limit per student (optional)
+              </label>
+              <input
+                id="max_submissions"
+                type="number"
+                min="1"
+                value={newAssignment.max_submissions}
+                onChange={(e) =>
+                  setNewAssignment({ ...newAssignment, max_submissions: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white"
+                placeholder="Leave empty for unlimited submissions"
+              />
+            </div>
             <button
               type="submit"
               className="inline-flex items-center px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
@@ -177,9 +197,30 @@ function ClassDetail({ user, onLogout }) {
       )}
 
       <div className="mb-4">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-          Assignments
-        </h2>
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Assignments
+          </h2>
+          {(user.role === "lecturer" || user.role === "admin") && classData && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (!window.confirm("Are you sure you want to delete this class? This will remove all assignments and submissions.")) {
+                  return
+                }
+                try {
+                  await api.delete(`/classes/${classData.id}`)
+                  navigate("/dashboard")
+                } catch (err) {
+                  setError(err.response?.data?.error || "Failed to delete class")
+                }
+              }}
+              className="text-sm text-red-600 dark:text-red-400 hover:underline"
+            >
+              Delete class
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Enrolled students list for lecturer/admin */}

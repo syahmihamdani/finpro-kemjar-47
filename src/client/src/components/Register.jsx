@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
-import { GraduationCap, Moon, Sun } from "lucide-react"
+import { Moon, Sun } from "lucide-react"
 import api from "../utils/api"
 import { useTheme } from "../contexts/ThemeContext.jsx"
 
@@ -66,13 +66,15 @@ function Register({ onLogin }) {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-              <GraduationCap className="w-9 h-9 text-white" />
-            </div>
+            <img
+              src="/learnify_logo.png"
+              alt="Learnify"
+              className="w-16 h-16 object-contain"
+            />
           </div>
           <h1 className="text-gray-900 dark:text-white mb-2">Create your Learnify account</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Choose your role and start using the vulnerable platform
+            Choose your role and start using the platform
           </p>
         </div>
 

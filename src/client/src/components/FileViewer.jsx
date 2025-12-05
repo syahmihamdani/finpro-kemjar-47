@@ -60,10 +60,6 @@ function FileViewer({ user, onLogout }) {
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-1">
           File viewer
         </h1>
-        <p className="text-sm text-red-600 dark:text-red-400 mb-4">
-          ⚠️ VULNERABLE: Local File Inclusion (LFI) with path traversal – this
-          endpoint is intentionally unsafe for demonstration.
-        </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

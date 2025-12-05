@@ -3,6 +3,9 @@ import { useNavigate, useParams } from "react-router-dom"
 import api from "../utils/api"
 import Layout from "./Layout.jsx"
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+const BACKEND_URL = API_BASE_URL.replace(/\/api$/, "")
+
 function AssignmentDetail({ user, onLogout }) {
   const { id } = useParams()
   const [assignment, setAssignment] = useState(null)
@@ -11,6 +14,7 @@ function AssignmentDetail({ user, onLogout }) {
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  const [deletingId, setDeletingId] = useState(null)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -72,7 +76,7 @@ function AssignmentDetail({ user, onLogout }) {
       formData.append('file', file)
 
       const token = localStorage.getItem('token')
-      const response = await fetch(`http://localhost:5000/api/assignments/${id}/submit`, {
+      const response = await fetch(`${API_BASE_URL}/assignments/${id}/submit`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -94,6 +98,24 @@ function AssignmentDetail({ user, onLogout }) {
       setMessage('Upload failed: ' + err.message)
     } finally {
       setUploading(false)
+    }
+  }
+
+  const handleDeleteSubmission = async (submissionId) => {
+    if (!window.confirm("Are you sure you want to delete this submission?")) return
+
+    try {
+      setDeletingId(submissionId)
+      await api.delete(`/submissions/${submissionId}`)
+      if (user.role === "student") {
+        fetchMySubmissions()
+      } else {
+        fetchSubmissions()
+      }
+    } catch (err) {
+      setMessage(err.response?.data?.error || "Failed to delete submission")
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -143,7 +165,7 @@ function AssignmentDetail({ user, onLogout }) {
       {/* File Upload Section (for students) */}
       {user.role === "student" && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6 border border-gray-100 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text:white mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
             Submit assignment
           </h2>
 
@@ -179,10 +201,6 @@ function AssignmentDetail({ user, onLogout }) {
                   hover:file:bg-blue-100
                   dark:file:bg-gray-700 dark:file:text-gray-100 dark:hover:file:bg-gray-600"
               />
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                ⚠️ VULNERABLE: This system accepts any file type without
-                validation (used to demonstrate insecure file upload).
-              </p>
             </div>
 
             <button
@@ -229,20 +247,30 @@ function AssignmentDetail({ user, onLogout }) {
                   </span>
                 </div>
 
-                <div className="mt-2 flex flex-wrap gap-2 text-sm">
+                <div className="mt-2 flex flex-wrap gap-2 text-sm items-center">
                   <button
                     type="button"
                     onClick={() => {
                       const relativePath = submission.file_path
                         .replace(/\\/g, "/")
                         .replace(/.*uploads\//, "uploads/")
-                      const url = `http://localhost:5000/${relativePath}`
+                      const url = `${BACKEND_URL}/${relativePath}`
                       window.open(url, "_blank", "noopener,noreferrer")
                     }}
                     className="text-blue-600 dark:text-blue-400 hover:underline"
                   >
                     View file
                   </button>
+                  {(user.role === "lecturer" || user.role === "admin") && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSubmission(submission.id)}
+                      disabled={deletingId === submission.id}
+                      className="text-red-600 dark:text-red-400 hover:underline disabled:opacity-50"
+                    >
+                      {deletingId === submission.id ? "Removing..." : "Remove submission"}
+                    </button>
+                  )}
                 </div>
 
                 {submission.grade !== null && (

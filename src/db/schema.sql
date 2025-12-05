@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS assignments (
     title VARCHAR(255) NOT NULL,
     description TEXT,
     due_date TIMESTAMP,
+    max_submissions INTEGER,
     created_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

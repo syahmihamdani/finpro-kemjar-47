@@ -7,13 +7,23 @@ const bcrypt = require("bcryptjs");
 require("dotenv").config();
 
 const { Pool } = require("pg");
-const pool = new Pool({
-  user: process.env.PG_USER || "postgres",
-  host: process.env.PG_HOST || "localhost",
-  database: process.env.PG_DATABASE || "learnify",
-  password: process.env.PG_PASSWORD || "postgres",
-  port: process.env.PG_PORT || 5432,
-});
+
+// Prefer a single connection string (e.g., Neon/Zeabur DATABASE_URL) when provided.
+// Falls back to individual PG_* variables for local development.
+const connectionString = process.env.DATABASE_URL || process.env.PG_CONNECTION_STRING;
+const pool = connectionString
+  ? new Pool({
+      connectionString,
+      // Neon/managed Postgres often requires SSL; allow override via PG_SSL=false for local dev.
+      ssl: process.env.PG_SSL === "false" ? false : { rejectUnauthorized: false },
+    })
+  : new Pool({
+      user: process.env.PG_USER || "postgres",
+      host: process.env.PG_HOST || "localhost",
+      database: process.env.PG_DATABASE || "learnify",
+      password: process.env.PG_PASSWORD || "postgres",
+      port: process.env.PG_PORT || 5432,
+    });
 
 const app = express();
 app.use(cors());
@@ -245,6 +255,40 @@ app.get("/api/classes/:id", authenticate, async (req, res) => {
   }
 });
 
+// Delete class (lecturer who owns it or admin)
+app.delete("/api/classes/:id", authenticate, async (req, res) => {
+  try {
+    const classId = req.params.id;
+
+    const classResult = await pool.query(
+      "SELECT * FROM classes WHERE id = $1",
+      [classId]
+    );
+
+    if (classResult.rows.length === 0) {
+      return res.status(404).json({ error: "Class not found" });
+    }
+
+    const classRow = classResult.rows[0];
+
+    if (
+      req.user.role === "lecturer" &&
+      classRow.lecturer_id !== req.user.id
+    ) {
+      return res
+        .status(403)
+        .json({ error: "You are not the lecturer for this class" });
+    }
+
+    // Admin can delete any class
+    await pool.query("DELETE FROM classes WHERE id = $1", [classId]);
+
+    res.json({ message: "Class deleted" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // List students enrolled in a class
 app.get("/api/classes/:id/students", authenticate, async (req, res) => {
   try {
@@ -316,7 +360,7 @@ app.post("/api/classes/:classId/assignments", authenticate, async (req, res) => 
       return res.status(403).json({ error: "Only lecturers or admins can create assignments" });
     }
 
-    const { title, description, due_date } = req.body;
+    const { title, description, due_date, max_submissions } = req.body;
     if (!title) {
       return res.status(400).json({ error: "Title is required" });
     }
@@ -340,8 +384,15 @@ app.post("/api/classes/:classId/assignments", authenticate, async (req, res) => 
     }
 
     const result = await pool.query(
-      "INSERT INTO assignments (class_id, title, description, due_date, created_by) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [req.params.classId, title, description || "", due_date || null, req.user.id]
+      "INSERT INTO assignments (class_id, title, description, due_date, max_submissions, created_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+      [
+        req.params.classId,
+        title,
+        description || "",
+        due_date || null,
+        max_submissions ? parseInt(max_submissions, 10) : null,
+        req.user.id,
+      ]
     );
 
     res.status(201).json(result.rows[0]);
@@ -379,6 +430,33 @@ app.post("/api/assignments/:assignmentId/submit", authenticate, upload.single("f
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    // Check submission limit for this assignment and student
+    const assignmentResult = await pool.query(
+      "SELECT max_submissions FROM assignments WHERE id = $1",
+      [req.params.assignmentId]
+    );
+
+    if (assignmentResult.rows.length === 0) {
+      return res.status(404).json({ error: "Assignment not found" });
+    }
+
+    const maxSubmissions = assignmentResult.rows[0].max_submissions;
+
+    if (maxSubmissions !== null) {
+      const countResult = await pool.query(
+        "SELECT COUNT(*) FROM submissions WHERE assignment_id = $1 AND student_id = $2",
+        [req.params.assignmentId, req.user.id]
+      );
+
+      const currentCount = parseInt(countResult.rows[0].count, 10);
+
+      if (currentCount >= maxSubmissions) {
+        return res
+          .status(400)
+          .json({ error: "Submission limit reached for this assignment" });
+      }
     }
     
     // VULNERABILITY: Directly using the original filename without sanitization
@@ -509,6 +587,21 @@ app.get("/api/assignments/:assignmentId/submissions", authenticate, async (req, 
     );
     
     res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete a single submission (lecturer/admin only)
+app.delete("/api/submissions/:id", authenticate, async (req, res) => {
+  try {
+    if (req.user.role !== "lecturer" && req.user.role !== "admin") {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    await pool.query("DELETE FROM submissions WHERE id = $1", [req.params.id]);
+
+    res.json({ message: "Submission deleted" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

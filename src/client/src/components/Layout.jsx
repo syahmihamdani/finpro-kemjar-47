@@ -1,5 +1,5 @@
 import { useNavigate, Link } from "react-router-dom"
-import { GraduationCap, Moon, Sun, LogOut, Home, PlusCircle, LogIn } from "lucide-react"
+import { Moon, Sun, LogOut, Home, PlusCircle, LogIn } from "lucide-react"
 import { useTheme } from "../contexts/ThemeContext.jsx"
 
 function Layout({ user, onLogout, children }) {
@@ -24,9 +24,11 @@ function Layout({ user, onLogout, children }) {
               onClick={() => navigate("/dashboard")}
               className="flex items-center gap-2 group"
             >
-              <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-md group-hover:shadow-lg transition-shadow">
-                <GraduationCap className="w-5 h-5" />
-              </div>
+              <img
+                src="/learnify_logo.png"
+                alt="Learnify"
+                className="w-9 h-9 object-contain"
+              />
               <div className="hidden sm:flex flex-col text-left">
                 <span className="text-sm font-semibold leading-tight">
                   Learnify
@@ -43,7 +45,7 @@ function Layout({ user, onLogout, children }) {
                 className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
                 <Home className="w-4 h-4" />
-                <span>Dashboard</span>
+                <span>Home</span>
               </Link>
 
               {user?.role === "student" && (
